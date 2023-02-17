@@ -1,0 +1,138 @@
+https://registry.terraform.io/providers/hashicorp/vault/latest/docs
+
+https://www.youtube.com/watch?v=m2tfC6lhUe0
+
+PROJECT_ID=control-center-dev-337811 
+PROJECT_ID=sandbox-celp-cf1a4
+gcloud \
+  --project ${PROJECT_ID} \
+  iam service-accounts list
+
+k3d-vault-gcr@sandbox-celp-cf1a4.iam.gserviceaccount.com]
+
+---
+
+SA_EMAIL=k3d-vault-gcr@sandbox-celp-cf1a4.iam.gserviceaccount.com
+
+# https://developer.hashicorp.com/vault/docs/secrets/gcp#static-accounts
+
+vault write gcp/static-account/my-token-account \
+service_account_email="${SA_EMAIL}" \
+secret_type="access_token"  \
+token_scopes="https://www.googleapis.com/auth/cloud-platform" \
+bindings=-<<EOF
+resource "//cloudresourcemanager.googleapis.com/projects/my-project" {
+roles = ["roles/viewer"]
+}
+EOF
+
+
+gcloud config list account --format "value(core.account)"
+gcloud iam roles create MY_ROLE --project sandbox-celp-cf1a4 
+
+
+PROJECT_ID=sandbox-celp-cf1a4
+SA_EMAIL=ludwig.prager@celp.de
+
+gcloud projects get-iam-policy $PROJECT_ID \
+  --flatten="bindings[].members" \
+  --format='table(binding.role)' \
+  --filter="bindings.members:user:$SA_EMAIL"
+
+
+---
+
+# To list the roles assigned to the service account:
+SERVICE_ACCOUNT_NAME=k3d-vault-gcr
+SERVICE_ACCOUNT_EMAIL=${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com 
+
+gcloud projects get-iam-policy $PROJECT_ID \
+  --flatten="bindings[].members" \
+  --format='table(bindings.role)' \
+  --filter="bindings.members:${SERVICE_ACCOUNT_EMAIL}"
+
+
+# To add the required role to the service account:
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+--member=serviceAccount:${SERVICE_ACCOUNT_EMAIL} \
+--role=roles/resourcemanager.projectIamAdmin
+
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+--member=serviceAccount:${SERVICE_ACCOUNT_EMAIL} \
+--role=roles/iam.serviceAccounts.get
+
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:${SERVICE_ACCOUNT_EMAIL}" \
+  --role=projects/$PROJECT_ID/roles/vault_gcp \
+  --verbosity=debug
+
+
+gcloud iam roles list --project=${PROJECT_ID} --format="value(name)" 
+
+---
+
+# https://binx.io/2019/03/29/how-to-grant-access-to-the-google-container-registry/
+PROJECT=$(gcloud config --quiet get-value project)
+docker pull nginx:latest
+docker tag nginx:latest gcr.io/$PROJECT/nginx:latest
+docker push gcr.io/$PROJECT/nginx:latest
+
+---
+
+gsutil iam ch serviceAccount:k3d-vault-gcr@g1-01-355707.iam.gserviceaccount.com:roles/storage.admin gs://$BUCKET
+
+
+
+## auth methods vs. secret engines
+auth methods: let you log into vault  
+secret engines: give you credentials from Vault.  
+from: https://medium.com/@rigel.reyes/vault-auth-methods-vs-vault-secrets-engines-8385668ccd72
+
+Rolesets: A roleset consists of a Vault managed GCP Service account along with a set of IAM bindings defined for that service account. 
+
+## Static Accounts / Access Tokens
+Die [Google Cloud Secrets Engine](https://developer.hashicorp.com/vault/docs/secrets/gcp) ist ein plugin für [hashicorp vault](https://developer.hashicorp.com/vault), das nur mit der `Google Cloud` arbeitet.
+Wir verwenden 'static account', die Alternative wäre 'RoleSets', das ist die andere Methode der 'gcp engine'.  
+
+
+https://developer.hashicorp.com/vault/docs/secrets/gcp#static-accounts
+Leider nicht sehr gut beschrieben, mit 'service accounts that are created outside of Vault'
+
+
+
+
+## vault online doc
+https://developer.hashicorp.com/vault/docs/auth/userpass
+https://developer.hashicorp.com/vault/tutorials/auth-methods/approle
+
+# MISC
+```
+gcloud iam service-accounts list
+```
+
+
+#
+
+Welcher service-account wird bei `vault write gcp/config` angegeben ??
+
+
+Der service-account 'gitlab-gce-registry' wird die role 'vault-gcp' bekommen
+Ist also der account, der bei `vault write gcp/static-account/my-key-account` angegeben wird.
+
+# To list the roles assigned to the service account:
+```
+SERVICE_ACCOUNT=poc-vault@g1-01-355707.iam.gserviceaccount.com 
+
+gcloud projects get-iam-policy $PROJECT_ID \
+  --flatten="bindings[].members" \
+  --format='table(bindings.role)' \
+  --filter="bindings.members:${SERVICE_ACCOUNT}"
+```
+
+---
+
+vault list gcp/static-account
+

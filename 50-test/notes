@@ -1,0 +1,12 @@
+vault login -method=userpass username=lupra
+
+gcloud iam service-accounts keys create ${SA_NAME}.${PROJECT_ID}.json --iam-account=${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com
+
+
+gcloud auth login --no-launch-browser
+
+PROJECT_ID=sandbox-sit-cf1a4
+
+
+cat token.json | docker login -u _json_key --password-stdin  https://eu.gcr.io
+

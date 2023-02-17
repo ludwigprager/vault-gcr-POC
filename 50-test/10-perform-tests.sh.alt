@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+set -eu
+BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $BASEDIR
+
+source ../functions.sh
+source ../set-env.sh
+
+vault auth list
+vault policy list
+vault secrets list
+
+echo skipping tests
+exit
+
+vault kv get developer/test_account
+
+vault write auth/userpass/users/lupra \
+  password=12345 \
+  policy=developer
+
+vault login -method=userpass username=lupra password=12345
+#vault token lookup
+vault login ${VAULT_TOKEN}
+#vault token lookup
+
+vault secrets disable gcp | true
+vault secrets enable gcp
+vault write gcp/config credentials=@my-credentials.json
+
+vault token lookup
+export VAULT_TOKEN="$(vault token create -field token -policy=developer)"
+vault token lookup
+
+#vault kv put -mount=secret creds password="my-long-password"
+vault kv put secret/creds password="my-long-password"
+
+: '
+vault auth list | grep 'approle/'
+vault auth enable approle
+
+vault write auth/approle/role/my-role \
+    secret_id_ttl=10m \
+    token_num_uses=10 \
+    token_ttl=20m \
+    token_max_ttl=30m \
+    secret_id_num_uses=40 \
+    token_policies=my-policy
+'
