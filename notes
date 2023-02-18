@@ -2,17 +2,16 @@ https://registry.terraform.io/providers/hashicorp/vault/latest/docs
 
 https://www.youtube.com/watch?v=m2tfC6lhUe0
 
-PROJECT_ID=control-center-dev-337811 
-PROJECT_ID=sandbox-celp-cf1a4
+PROJECT_ID=sandbox-celp-cf2b4
 gcloud \
   --project ${PROJECT_ID} \
   iam service-accounts list
 
-k3d-vault-gcr@sandbox-celp-cf1a4.iam.gserviceaccount.com]
+k3d-vault-gcr@sandbox-celp-cf2b4.iam.gserviceaccount.com]
 
 ---
 
-SA_EMAIL=k3d-vault-gcr@sandbox-celp-cf1a4.iam.gserviceaccount.com
+SA_EMAIL=k3d-vault-gcr@sandbox-celp-cf2b4.iam.gserviceaccount.com
 
 # https://developer.hashicorp.com/vault/docs/secrets/gcp#static-accounts
 
@@ -28,10 +27,10 @@ EOF
 
 
 gcloud config list account --format "value(core.account)"
-gcloud iam roles create MY_ROLE --project sandbox-celp-cf1a4 
+gcloud iam roles create MY_ROLE --project sandbox-celp-cf2b4 
 
 
-PROJECT_ID=sandbox-celp-cf1a4
+PROJECT_ID=sandbox-celp-cf2b4
 SA_EMAIL=ludwig.prager@celp.de
 
 gcloud projects get-iam-policy $PROJECT_ID \
